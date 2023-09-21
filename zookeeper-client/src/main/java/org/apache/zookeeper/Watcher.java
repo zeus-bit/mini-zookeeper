@@ -14,12 +14,6 @@ public interface Watcher {
 
             SyncConnected (3),
 
-            AuthFailed (4),
-
-            ConnectedReadOnly (5),
-
-            SaslAuthenticated(6),
-
             Expired (-112);
 
             private final int intValue;     // Integer representation of value
@@ -39,9 +33,6 @@ public interface Watcher {
                     case    0: return KeeperState.Disconnected;
                     case    1: return KeeperState.NoSyncConnected;
                     case    3: return KeeperState.SyncConnected;
-                    case    4: return KeeperState.AuthFailed;
-                    case    5: return KeeperState.ConnectedReadOnly;
-                    case    6: return KeeperState.SaslAuthenticated;
                     case -112: return KeeperState.Expired;
 
                     default:

@@ -7,7 +7,6 @@ public class ZooDefs {
         int setData = 5;
         int ping = 11;
         int check = 13;
-        int auth = 100;
         int error = -1;
         int closeSession = -11;
     }

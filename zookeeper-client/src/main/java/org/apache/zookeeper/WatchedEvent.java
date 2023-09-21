@@ -1,6 +1,7 @@
 package org.apache.zookeeper;
 
 import org.apache.zookeeper.Watcher.Event.*;
+import org.apache.zookeeper.proto.WatcherEvent;
 
 public class WatchedEvent {
 
@@ -12,6 +13,12 @@ public class WatchedEvent {
         this.keeperState = keeperState;
         this.eventType = eventType;
         this.path = path;
+    }
+
+    public WatchedEvent(WatcherEvent eventMessage) {
+        keeperState = KeeperState.fromInt(eventMessage.getState());
+        eventType = EventType.fromInt(eventMessage.getType());
+        path = eventMessage.getPath();
     }
 
     public KeeperState getState() {

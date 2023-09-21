@@ -14,25 +14,24 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class NIOServerCnxn extends ServerCnxn {
 
-    static final Logger LOG = LoggerFactory.getLogger(NIOServerCnxn.class);
+    private static final Logger LOG = LoggerFactory.getLogger(NIOServerCnxn.class);
+
+    private final ZooKeeperServer zkServer;
+    private final SocketChannel sock;
+    private final SelectionKey sk;
+    private final NIOServerCnxnFactory factory;
+    private int outstandingLimit = 1;
 
     long sessionId;
 
-    protected final ZooKeeperServer zkServer;
-    final SocketChannel sock;
-    protected final SelectionKey sk;
-    NIOServerCnxnFactory factory;
-    int outstandingLimit = 1;
+    private ByteBuffer lenBuffer = ByteBuffer.allocate(4);
+    private ByteBuffer incomingBuffer = lenBuffer;
 
-    ByteBuffer lenBuffer = ByteBuffer.allocate(4);
+    private boolean initialized;
 
-    ByteBuffer incomingBuffer = lenBuffer;
+    private int sessionTimeout;
 
-    boolean initialized;
-
-    int sessionTimeout;
-
-    LinkedBlockingQueue<ByteBuffer> outgoingBuffers = new LinkedBlockingQueue<ByteBuffer>();
+    private LinkedBlockingQueue<ByteBuffer> outgoingBuffers = new LinkedBlockingQueue<ByteBuffer>();
 
 
     public NIOServerCnxn(ZooKeeperServer zk, SocketChannel sock,
@@ -45,24 +44,15 @@ public class NIOServerCnxn extends ServerCnxn {
             outstandingLimit = zk.getGlobalOutstandingLimit();
         }
         sock.socket().setTcpNoDelay(true);
-        /* set socket linger to false, so that socket close does not
-         * block */
         sock.socket().setSoLinger(false, -1);
-        InetAddress addr = ((InetSocketAddress) sock.socket()
-                .getRemoteSocketAddress()).getAddress();
-//        authInfo.add(new Id("ip", addr.getHostAddress()));
         sk.interestOps(SelectionKey.OP_READ);
     }
 
-    /**
-     * Handles read/write IO on connection.
-     */
     void doIO(SelectionKey k) throws InterruptedException {
         try {
             if (!isSocketOpen()) {
                 LOG.warn("trying to do i/o on a null socket for session:0x"
                         + Long.toHexString(sessionId));
-
                 return;
             }
             if (k.isReadable()) {
@@ -80,7 +70,6 @@ public class NIOServerCnxn extends ServerCnxn {
                         isPayload = readLength(k);
                         incomingBuffer.clear();
                     } else {
-                        // continuation
                         isPayload = true;
                     }
                     if (isPayload) { // not the case for 4letterword
@@ -113,7 +102,7 @@ public class NIOServerCnxn extends ServerCnxn {
         }
     }
 
-    protected boolean isSocketOpen() {
+    private boolean isSocketOpen() {
         return sock.isOpen();
     }
 
@@ -133,20 +122,18 @@ public class NIOServerCnxn extends ServerCnxn {
         return true;
     }
 
-    private boolean checkFourLetterWord(final SelectionKey k, final int len)
-            throws IOException {
+    private boolean checkFourLetterWord(final SelectionKey k, final int len){
         //todo
         return false;
     }
 
-    boolean isZKServerRunning() {
+    private boolean isZKServerRunning() {
         return zkServer != null && zkServer.isRunning();
     }
 
-    /** Read the request payload (everything following the length prefix) */
-    private void readPayload() throws IOException, InterruptedException {
-        if (incomingBuffer.remaining() != 0) { // have we read length bytes?
-            int rc = sock.read(incomingBuffer); // sock is non-blocking, so ok
+    private void readPayload() throws IOException {
+        if (incomingBuffer.remaining() != 0) {
+            int rc = sock.read(incomingBuffer);
             if (rc < 0) {
                 throw new EndOfStreamException(
                         "Unable to read additional data from client sessionid 0x"
@@ -154,7 +141,7 @@ public class NIOServerCnxn extends ServerCnxn {
                                 + ", likely client has closed socket");
             }
         }
-        if (incomingBuffer.remaining() == 0) { // have we read length bytes?
+        if (incomingBuffer.remaining() == 0) {
             packetReceived();
             incomingBuffer.flip();
             if (!initialized) {
@@ -181,7 +168,6 @@ public class NIOServerCnxn extends ServerCnxn {
         if (sock == null) {
             return null;
         }
-
         return sock.socket().getInetAddress();
     }
 
@@ -191,11 +177,6 @@ public class NIOServerCnxn extends ServerCnxn {
             return null;
         }
         return (InetSocketAddress) sock.socket().getRemoteSocketAddress();
-    }
-
-    @Override
-    public void close() {
-
     }
 
     @Override
@@ -239,7 +220,7 @@ public class NIOServerCnxn extends ServerCnxn {
         }
     }
 
-    protected void internalSendBuffer(ByteBuffer bb) {
+    private void internalSendBuffer(ByteBuffer bb) {
         if (bb != ServerCnxnFactory.closeConn) {
             // We check if write interest here because if it is NOT set,
             // nothing is queued, so we can try to send the buffer right
@@ -270,5 +251,10 @@ public class NIOServerCnxn extends ServerCnxn {
                 sk.interestOps(sk.interestOps() | SelectionKey.OP_WRITE);
             }
         }
+    }
+
+    @Override
+    public void close() {
+
     }
 }

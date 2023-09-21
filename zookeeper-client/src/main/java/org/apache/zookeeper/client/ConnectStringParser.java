@@ -14,7 +14,6 @@ public class ConnectStringParser {
         int off = connectString.indexOf('/');
         if (off >= 0) {
             String chrootPath = connectString.substring(off);
-            // ignore "/" chroot spec, same as null
             if (chrootPath.length() == 1) {
                 this.chrootPath = null;
             } else {
@@ -31,7 +30,6 @@ public class ConnectStringParser {
             int port = DEFAULT_PORT;
             int pidx = host.lastIndexOf(':');
             if (pidx >= 0) {
-                // otherwise : is at the end of the string, ignore
                 if (pidx < host.length() - 1) {
                     port = Integer.parseInt(host.substring(pidx + 1));
                 }

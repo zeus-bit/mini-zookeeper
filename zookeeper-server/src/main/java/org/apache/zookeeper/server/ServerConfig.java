@@ -8,15 +8,13 @@ import java.util.Arrays;
 
 public class ServerConfig {
 
-    protected InetSocketAddress clientPortAddress;
-    protected String dataDir;
-    protected String dataLogDir;
-    protected int tickTime = ZooKeeperServer.DEFAULT_TICK_TIME;
-    protected int maxClientCnxns;
-    /** defaults to -1 if not set explicitly */
-    protected int minSessionTimeout = -1;
-    /** defaults to -1 if not set explicitly */
-    protected int maxSessionTimeout = -1;
+    private InetSocketAddress clientPortAddress;
+    private String dataDir;
+    private String dataLogDir;
+    private int tickTime = ZooKeeperServer.DEFAULT_TICK_TIME;
+    private int maxClientCnxns;
+    private int minSessionTimeout = -1;
+    private int maxSessionTimeout = -1;
 
     public void parse(String[] args) {
         if (args.length < 2 || args.length > 4) {
@@ -40,7 +38,7 @@ public class ServerConfig {
         readFrom(config);
     }
 
-    public void readFrom(QuorumPeerConfig config) {
+    private void readFrom(QuorumPeerConfig config) {
         clientPortAddress = config.getClientPortAddress();
         dataDir = config.getDataDir();
         dataLogDir = config.getDataLogDir();
@@ -57,8 +55,6 @@ public class ServerConfig {
     public String getDataLogDir() { return dataLogDir; }
     public int getTickTime() { return tickTime; }
     public int getMaxClientCnxns() { return maxClientCnxns; }
-    /** minimum session timeout in milliseconds, -1 if unset */
     public int getMinSessionTimeout() { return minSessionTimeout; }
-    /** maximum session timeout in milliseconds, -1 if unset */
     public int getMaxSessionTimeout() { return maxSessionTimeout; }
 }

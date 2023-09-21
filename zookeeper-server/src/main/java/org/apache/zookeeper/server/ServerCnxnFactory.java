@@ -20,13 +20,12 @@ public abstract class ServerCnxnFactory {
 
     protected final HashSet<ServerCnxn> cnxns = new HashSet<ServerCnxn>();
 
-    // sessionMap is used to speed up closeSession()
     protected final ConcurrentMap<Long, ServerCnxn> sessionMap =
             new ConcurrentHashMap<Long, ServerCnxn>();
 
-    static final ByteBuffer closeConn = ByteBuffer.allocate(0);
+    protected static final ByteBuffer closeConn = ByteBuffer.allocate(0);
 
-    static public ServerCnxnFactory createFactory() throws IOException {
+    public static ServerCnxnFactory createFactory() throws IOException {
         String serverCnxnFactoryName =
                 System.getProperty(ZOOKEEPER_SERVER_CNXN_FACTORY);
         if (serverCnxnFactoryName == null) {
@@ -51,14 +50,14 @@ public abstract class ServerCnxnFactory {
 
     public abstract void start();
 
-    final public void setZooKeeperServer(ZooKeeperServer zk) {
+    public void setZooKeeperServer(ZooKeeperServer zk) {
         this.zkServer = zk;
         if (zk != null) {
             zk.setServerCnxnFactory(this);
         }
     }
 
-    abstract void closeAll();
+    public abstract void closeAll();
 
     public int getNumAliveConnections() {
         synchronized(cnxns) {
@@ -66,9 +65,13 @@ public abstract class ServerCnxnFactory {
         }
     }
 
-    public abstract void closeSession(long sessionId);
-
     public void addSession(long sessionId, ServerCnxn cnxn) {
         sessionMap.put(sessionId, cnxn);
     }
+
+    public abstract void closeSession(long sessionId);
+
+    public abstract void join() throws InterruptedException;
+
+    public abstract void shutdown();
 }

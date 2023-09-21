@@ -9,8 +9,7 @@ import java.util.concurrent.CountDownLatch;
 
 public class ZooKeeperServerMain {
 
-    private static final Logger LOG =
-            LoggerFactory.getLogger(ZooKeeperServerMain.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ZooKeeperServerMain.class);
 
     private ServerCnxnFactory cnxnFactory;
 
@@ -20,15 +19,16 @@ public class ZooKeeperServerMain {
             main.initializeAndRun(args);
         } catch (ConfigException e) {
             LOG.error("Invalid config, exiting abnormally", e);
-            System.err.println("Invalid config, exiting abnormally");
             System.exit(2);
         } catch (Exception e) {
             LOG.error("Unexpected exception, exiting abnormally", e);
             System.exit(1);
         }
+        LOG.info("Exiting normally");
+        System.exit(0);
     }
 
-    protected void initializeAndRun(String[] args) throws ConfigException, IOException {
+    private void initializeAndRun(String[] args) throws ConfigException, IOException {
         ServerConfig config = new ServerConfig();
         if (args.length == 1) {
             config.parse(args[0]);
@@ -38,7 +38,7 @@ public class ZooKeeperServerMain {
         runFromConfig(config);
     }
 
-    public void runFromConfig(ServerConfig config) throws IOException {
+    private void runFromConfig(ServerConfig config) throws IOException {
         LOG.info("Starting server");
 
         try {
@@ -46,17 +46,28 @@ public class ZooKeeperServerMain {
             CountDownLatch shutdownLatch = new CountDownLatch(1);
             zkServer.registerServerShutdownHandler(
                     new ZooKeeperServerShutdownHandler(shutdownLatch));
-            zkServer.setTickTime(config.tickTime);
-            zkServer.setMinSessionTimeout(config.minSessionTimeout);
-            zkServer.setMaxSessionTimeout(config.maxSessionTimeout);
+            zkServer.setTickTime(config.getTickTime());
+            zkServer.setMinSessionTimeout(config.getMinSessionTimeout());
+            zkServer.setMaxSessionTimeout(config.getMaxSessionTimeout());
             cnxnFactory = ServerCnxnFactory.createFactory();
             cnxnFactory.configure(config.getClientPortAddress(),
                     config.getMaxClientCnxns());
             cnxnFactory.startup(zkServer);
             shutdownLatch.await();
+            shutdown();
+
+            cnxnFactory.join();
+            if (zkServer.canShutdown()) {
+                zkServer.shutdown(true);
+            }
         } catch (InterruptedException e) {
-            // warn, but generally this is ok
             LOG.warn("Server interrupted", e);
+        }
+    }
+
+    private void shutdown() {
+        if (cnxnFactory != null) {
+            cnxnFactory.shutdown();
         }
     }
 }

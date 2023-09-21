@@ -26,15 +26,6 @@ public class ZooKeeperThread extends Thread {
         setUncaughtExceptionHandler(uncaughtExceptionalHandler);
     }
 
-    /**
-     * This will be used by the uncaught exception handler and just log a
-     * warning message and return.
-     *
-     * @param thName
-     *            - thread name
-     * @param e
-     *            - exception object
-     */
     protected void handleException(String thName, Throwable e) {
         LOG.warn("Exception occurred from thread {}", thName, e);
     }

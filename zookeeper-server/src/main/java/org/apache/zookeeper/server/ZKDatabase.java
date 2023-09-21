@@ -4,7 +4,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ZKDatabase {
 
-    protected ConcurrentHashMap<Long, Integer> sessionsWithTimeouts;
+    private final ConcurrentHashMap<Long, Integer> sessionsWithTimeouts;
 
 
     public ZKDatabase() {

@@ -9,11 +9,6 @@ class ZooKeeperServerShutdownHandler {
         this.shutdownLatch = shutdownLatch;
     }
 
-    /**
-     * This will be invoked when the server transition to a new server state.
-     *
-     * @param state new server state
-     */
     void handle(ZooKeeperServer.State state) {
         if (state == ZooKeeperServer.State.ERROR || state == ZooKeeperServer.State.SHUTDOWN) {
             shutdownLatch.countDown();

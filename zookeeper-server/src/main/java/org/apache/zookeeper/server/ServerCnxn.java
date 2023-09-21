@@ -10,31 +10,11 @@ public abstract class ServerCnxn {
 
     protected final AtomicLong packetsReceived = new AtomicLong();
 
-    boolean isOldClient = true;
-
     protected final AtomicLong packetsSent = new AtomicLong();
-
-    abstract void close();
 
     public abstract InetAddress getSocketAddress();
 
     public abstract InetSocketAddress getRemoteSocketAddress();
-
-    abstract int getSessionTimeout();
-
-    abstract long getSessionId();
-
-    protected static class EndOfStreamException extends IOException {
-        private static final long serialVersionUID = -8255690282104294178L;
-
-        public EndOfStreamException(String msg) {
-            super(msg);
-        }
-
-        public String toString() {
-            return "EndOfStreamException: " + getMessage();
-        }
-    }
 
     protected void packetReceived() {
         incrPacketsReceived();
@@ -56,6 +36,21 @@ public abstract class ServerCnxn {
 
     abstract void setSessionId(long sessionId);
 
+    abstract int getSessionTimeout();
+
+    abstract long getSessionId();
+
+    protected static class EndOfStreamException extends IOException {
+
+        public EndOfStreamException(String msg) {
+            super(msg);
+        }
+
+        public String toString() {
+            return "EndOfStreamException: " + getMessage();
+        }
+    }
+
     abstract void sendBuffer(ByteBuffer closeConn);
 
     protected void packetSent() {
@@ -70,11 +65,5 @@ public abstract class ServerCnxn {
         return packetsSent.incrementAndGet();
     }
 
-    protected static class CloseRequestException extends IOException {
-        private static final long serialVersionUID = -7854505709816442681L;
-
-        public CloseRequestException(String msg) {
-            super(msg);
-        }
-    }
+    abstract void close();
 }

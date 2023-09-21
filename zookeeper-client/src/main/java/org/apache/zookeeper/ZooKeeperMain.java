@@ -1,44 +1,55 @@
 package org.apache.zookeeper;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 public class ZooKeeperMain {
+    private static final Logger LOG = LoggerFactory.getLogger(ZooKeeperMain.class);
 
-    protected ZooKeeper zk;
-    protected String host = "";
-    protected boolean printWatches = true;
+    private MyCommandOptions cl = new MyCommandOptions();
 
     private static CountDownLatch latch = new CountDownLatch(1);
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        ZooKeeperMain main = new ZooKeeperMain(args);
+        ZooKeeperMain main = new ZooKeeperMain();
         latch.await();
     }
 
-    public ZooKeeperMain(String args[]) throws IOException {
-        connectToZK("localhost:2181");
+    public ZooKeeperMain() throws IOException {
+        LOG.info("Connecting to " + cl.getOption("server"));
+        connectToZK(cl.getOption("server"));
     }
 
-    protected void connectToZK(String newHost) throws IOException {
-        host = newHost;
-        zk = new ZooKeeper(host, 30000, new MyWatcher(), false);
+    private void connectToZK(String host) throws IOException {
+        new ZooKeeper(host, Integer.parseInt(cl.getOption("timeout")), new MyWatcher());
     }
 
-    private class MyWatcher implements Watcher {
+    private static class MyWatcher implements Watcher {
         public void process(WatchedEvent event) {
-            if (getPrintWatches()) {
-                ZooKeeperMain.printMessage("WATCHER::");
-                ZooKeeperMain.printMessage(event.toString());
-            }
+            ZooKeeperMain.printMessage("WATCHER::");
+            ZooKeeperMain.printMessage(event.toString());
         }
     }
 
-    public boolean getPrintWatches( ) {
-        return printWatches;
+    private static void printMessage(String msg) {
+        LOG.info("\n"+msg);
     }
 
-    public static void printMessage(String msg) {
-        System.out.println("\n"+msg);
+    private static class MyCommandOptions {
+        private Map<String,String> options = new HashMap<String,String>();
+
+        public MyCommandOptions() {
+            options.put("server", "localhost:2181,10.2.21.140:2181");
+            options.put("timeout", "30000");
+        }
+
+        private String getOption(String opt) {
+            return options.get(opt);
+        }
     }
 }

@@ -1,11 +1,21 @@
 package org.apache.zookeeper.client;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.*;
 
 public final class StaticHostProvider implements HostProvider {
+    public interface Resolver {
+        InetAddress[] getAllByName(String name) throws UnknownHostException;
+    }
+
+    private static final Logger LOG = LoggerFactory
+            .getLogger(StaticHostProvider.class);
+
 
     private Resolver resolver;
     private final List<InetSocketAddress> serverAddresses = new ArrayList<InetSocketAddress>(5);
@@ -24,10 +34,6 @@ public final class StaticHostProvider implements HostProvider {
         init(serverAddresses);
     }
 
-    public interface Resolver {
-        InetAddress[] getAllByName(String name) throws UnknownHostException;
-    }
-
     private void init(Collection<InetSocketAddress> serverAddresses) {
         if (serverAddresses.isEmpty()) {
             throw new IllegalArgumentException(
@@ -44,14 +50,14 @@ public final class StaticHostProvider implements HostProvider {
 
     public InetSocketAddress next(long spinDelay) {
         currentIndex = ++currentIndex % serverAddresses.size();
+        LOG.info("currentIndex:{}, lastIndex:{}", currentIndex, lastIndex);
         if (currentIndex == lastIndex && spinDelay > 0) {
             try {
                 Thread.sleep(spinDelay);
             } catch (InterruptedException e) {
-//                LOG.warn("Unexpected exception", e);
+                LOG.warn("Unexpected exception", e);
             }
         } else if (lastIndex == -1) {
-            // We don't want to sleep on the first ever connect attempt.
             lastIndex = 0;
         }
 
